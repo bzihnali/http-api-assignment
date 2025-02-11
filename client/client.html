@@ -1,13 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <title>Our simple HTTP server</title>
   <link rel="stylesheet" type="text/css" href="/style.css">
-  
-  <script>
 
+  <script>
+    const handleResponse = (response) => {
+      const content = document.getElementById('content');
+
+      response.text().then((resText) => {
+        const contentType = response.headers.get('Content-Type');
+        console.log(contentType)
+        console.log(resText)
+        if (contentType === 'application/json') {
+          const parsedResponse = JSON.parse(resText);
+          content.innerHTML = `<h1>${document.querySelector("#page").value} | ${document.querySelector("#type").value}</h1><p>${parsedResponse.message}</p>`
+        } else if (contentType === 'text/xml') { //If the server sent back xml
+          //Parse the xml into a document and select the data out.
+          const parsedResponse = new window.DOMParser().parseFromString(resText, 'text/xml');
+          content.innerHTML = `<h1>${document.querySelector("#page").value} | ${document.querySelector("#type").value}</h1><p>${parsedResponse.querySelector('message').textContent}</p>`
+        }
+        
+      });
+    };
+
+    const sendFetchRequest = (url, acceptedType) => {
+
+      const options = {
+        method: 'GET',
+        headers: { 'Accept': acceptedType },
+      }
+
+      const fetchPromise = fetch(url, options);
+      fetchPromise.then((response) => { handleResponse(response) });
+    };
+
+    const init = () => {
+      const pageSelect = document.querySelector("#page");
+      const typeSelect = document.querySelector("#type");
+      const sendButton = document.querySelector("#send");
+
+      const send = () => sendFetchRequest(pageSelect.value, typeSelect.value);
+
+      sendButton.addEventListener('click', send);
+    };
+
+    window.onload = init;
   </script>
 </head>
+
 <body>
   <section id="top">
     <h3>Status Code Tests</h3>
@@ -29,4 +71,5 @@
   <section id="content">
   </section>
 </body>
+
 </html>
